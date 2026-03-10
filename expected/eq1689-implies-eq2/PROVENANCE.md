@@ -20,6 +20,7 @@
 ## Why This Test Case
 
 This is THE benchmark case:
+
 - It's the exact proof Terence Tao formalized in the video that inspired this project
 - Two reference outputs to compare against (compact vs verbose)
 - Has custom notation (S, f) that needs to be introduced — tests Step 0

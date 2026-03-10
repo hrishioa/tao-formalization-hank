@@ -1,6 +1,6 @@
 # Lean Proof Formalization Hank
 
-A [Hankweave](https://github.com/SouthBridgeAI/hankweave-runtime) pipeline that automatically formalizes informal mathematical proofs into Lean 4, inspired by [Terence Tao's demonstration](https://www.youtube.com/watch?v=HDUE0HVvTtc) of using Claude Code to formalize proofs in the [equational theories project](https://github.com/teorth/equational_theories).
+A [Hankweave](https://github.com/SouthBridgeAI/hankweave-runtime) pipeline that automatically formalizes informal mathematical proofs into Lean 4, inspired by [Terence Tao's demonstration](https://www.youtube.com/watch?v=JHEO7cplfk8) of using Claude Code to formalize proofs in the [equational theories project](https://github.com/teorth/equational_theories).
 
 ## What This Does
 
@@ -8,13 +8,11 @@ Given an informal proof (in markdown) that one equational law implies another, t
 
 The process follows Tao's key insight: **skeleton first, fill later**. Instead of asking an AI to formalize a proof in one shot (which leads to 45 minutes of going in circles), the Hank breaks the task into structured steps with compilation checks between each.
 
-
-
 Disclaimer: This hank is meant as a fun experiment, to compare models on math capabilities, and to explore agentic programming with lean. Not for production use, or anything that is less than 7/10 on fun.
 
 ## Background
 
-Recently, Terence Tao posted a [YouTube video](https://www.youtube.com/watch?v=HDUE0HVvTtc) showing himself using Claude Code to formalize a proof that Equation 1689 implies Equation 2 (the singleton law) from the [equational theories project](https://github.com/teorth/equational_theories). His process, refined over three attempts, was:
+Recently, Terence Tao posted a [YouTube video](https://www.youtube.com/watch?v=JHEO7cplfk8) showing himself using Claude Code to formalize a proof that Equation 1689 implies Equation 2 (the singleton law) from the [equational theories project](https://github.com/teorth/equational_theories). His process, refined over three attempts, was:
 
 1. **Attempt 1:** Asked Claude to do everything at once. Ran 45 minutes, crashed, accomplished nothing.
 2. **Attempt 2:** Broke it into steps (formalize definitions, skeleton with `sorry`, fill proofs). Worked in 25 minutes.
@@ -131,15 +129,13 @@ npx hankweave ./hank.json ./inputs/eq1689-implies-eq2 -o ./my-output
 
 Five test cases of increasing difficulty, extracted from the [equational theories project](https://github.com/teorth/equational_theories):
 
-
 | Test Case              | Implication    | Difficulty  | Source                                                                       |
 | ---------------------- | -------------- | ----------- | ---------------------------------------------------------------------------- |
 | `eq387-implies-eq43`   | Eq387 → Eq43   | Easy        | [MathOverflow](https://mathoverflow.net/a/450905/766)                        |
 | `eq3744-implies-eq381` | Eq3744 → Eq381 | Easy-Medium | Putnam 1978, Problem A4                                                      |
 | `eq953-implies-eq2`    | Eq953 → Eq2    | Medium-Easy | equational_theories blueprint                                                |
-| `eq1689-implies-eq2`   | Eq1689 → Eq2   | Medium      | Kisielewicz 1997; [Tao's video](https://www.youtube.com/watch?v=HDUE0HVvTtc) |
+| `eq1689-implies-eq2`   | Eq1689 → Eq2   | Medium      | Kisielewicz 1997; [Tao's video](https://www.youtube.com/watch?v=JHEO7cplfk8) |
 | `eq1571-implies-eq43`  | Eq1571 → Eq43  | Hard        | Mendelsohn-Padmanabhan                                                       |
-
 
 Each input directory contains only:
 
@@ -162,15 +158,15 @@ All 5 test cases run with 3 different models (15 runs total, fully autonomous, h
 
 All 15 proofs independently verified to compile with `lake build`. See [`results/ANALYSIS.md`](results/ANALYSIS.md) for deep analysis.
 
-| Test Case | Haiku | Opus | GPT-5.4 |
-|-----------|-------|------|---------|
-| eq387 → eq43 | $0.22 | $0.59 | $0.39 |
-| eq953 → eq2 | $0.15 | $0.63 | $0.18 |
-| eq3744 → eq381 | $0.11 | $0.49 | $0.24 |
-| eq1689 → eq2 | $0.16 (5 sorry) | $1.16 | $0.28 |
-| eq1571 → eq43 | $0.65 (3 sorry) | $2.13 (10 sorry) | $0.27 |
-| **Total** | **$1.29** | **$5.00** | **$1.36** |
-| **Clean (0 sorry)** | **3/5** | **4/5** | **5/5** |
+| Test Case           | Haiku           | Opus             | GPT-5.4   |
+| ------------------- | --------------- | ---------------- | --------- |
+| eq387 → eq43        | $0.22           | $0.59            | $0.39     |
+| eq953 → eq2         | $0.15           | $0.63            | $0.18     |
+| eq3744 → eq381      | $0.11           | $0.49            | $0.24     |
+| eq1689 → eq2        | $0.16 (5 sorry) | $1.16            | $0.28     |
+| eq1571 → eq43       | $0.65 (3 sorry) | $2.13 (10 sorry) | $0.27     |
+| **Total**           | **$1.29**       | **$5.00**        | **$1.36** |
+| **Clean (0 sorry)** | **3/5**         | **4/5**          | **5/5**   |
 
 ### Key Findings
 
@@ -178,7 +174,7 @@ All 15 proofs independently verified to compile with `lake build`. See [`results
 
 **Structure helps weak models most.** Haiku gets 3/5 clean for $1.29 because the skeleton prevents it from going off-track. The two failures have correct structure — a human or stronger model can finish from the generated `drop_me_into_your_agent.md`.
 
-**Even strong models can overthink.** Opus regressed on eq1571 — the sentinel caught it spending 26 minutes *thinking* without writing code. The exact failure mode Tao described in his video. Structure prevents this for weaker models but a powerful model can defeat it by reasoning internally.
+**Even strong models can overthink.** Opus regressed on eq1571 — the sentinel caught it spending 26 minutes _thinking_ without writing code. The exact failure mode Tao described in his video. Structure prevents this for weaker models but a powerful model can defeat it by reasoning internally.
 
 **Sentinels work.** The narrator tracks progress ("3/4 sorries filled, working on lemma3"). The stuck detector catches circular behavior ("agent has been working on eq40 for 1561 seconds without writing code"). Both produce actionable output to `sentinel-notes/`.
 
@@ -244,13 +240,16 @@ To formalize a new proof, create a directory with an `informal_proof.md`:
 # Equation X implies Equation Y
 
 ## Equation Definitions
+
 - **Equation X**: `[definition]` for all x, y, ...
 - **Equation Y**: `[definition]` for all x, y, ...
 
 ## Goal
+
 Prove that any magma satisfying Equation X also satisfies Equation Y.
 
 ## Informal Proof
+
 [Your proof here, with lemma structure if applicable]
 ```
 
@@ -313,7 +312,7 @@ tao-formalization-hank/
 
 ## Sources & Acknowledgments
 
-- **Terence Tao's video**: ["Formalizing a proof in Lean using Claude Code"](https://www.youtube.com/watch?v=HDUE0HVvTtc) — the inspiration for this Hank
+- **Terence Tao's video**: ["Formalizing a proof in Lean using Claude Code"](https://www.youtube.com/watch?v=JHEO7cplfk8) — the inspiration for this Hank
 - **Equational theories project**: [github.com/teorth/equational_theories](https://github.com/teorth/equational_theories) — all informal proofs and reference formalizations come from here
 - **Blueprint (informal proofs)**: `[blueprint/src/chapter/implications.tex](https://github.com/teorth/equational_theories/blob/main/blueprint/src/chapter/implications.tex)`
 - **Formalized proofs**: `[equational_theories/Subgraph.lean](https://github.com/teorth/equational_theories/blob/main/equational_theories/Subgraph.lean)`

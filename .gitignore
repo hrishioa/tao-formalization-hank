@@ -1,0 +1,15 @@
+# Lean build artifacts (huge, ~7GB each)
+.lake/
+lake-manifest.json
+
+# Hankweave execution directories
+.hankweave/
+
+# Local Mathlib cache
+~/.hankweave-lean-cache/
+
+# OS
+.DS_Store
+
+# Temporary
+*.log

@@ -1,0 +1,1 @@
+All sorries filled successfully. Final build passed with 0 remaining sorries in Formalization.Basic. Proof formalization complete (3104 jobs compiled).

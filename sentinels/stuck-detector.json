@@ -1,0 +1,21 @@
+{
+  "id": "stuck-detector",
+  "name": "Stuck & Circular Behavior Detector",
+  "description": "Detects when the agent is spinning its wheels on a proof",
+  "trigger": {
+    "type": "event",
+    "on": ["tool.result", "assistant.action"]
+  },
+  "execution": {
+    "strategy": "count",
+    "threshold": 15
+  },
+  "model": "anthropic/claude-haiku-4-5-20251001",
+  "systemPromptText": "You are a watchdog observing an AI agent filling Lean 4 proofs. Detect PROBLEMS only. The theorem being proved IS correct — never question whether the mathematical statement is true. The issue is always the proof strategy, not the theorem.\n\nWatch for:\n1) Circular behavior: same tactic or approach retried 3+ times without progress\n2) Stuck on one sorry: agent working on same proof for many events without lake build succeeding\n3) Abbreviation drift: agent expanding S/f notation instead of using the abbrevs\n4) Not moving on: agent should skip a sorry after 2-3 failed attempts and try other lemmas first\n\nOutput format: ## WARNING: [category]\\n[description]\\n**Suggestion:** [what to do instead]\n\nSuggestions should be actionable: try a different tactic, skip to next lemma, use grind/simp, check the informal proof for hints. If everything looks healthy, output NOTHING.",
+  "userPromptText": "Recent events (last 15):\n<%= JSON.stringify(it.events.slice(-15), null, 2) %>\n\nCodon: <%= it.codon.name %>\nRunning for: <%= Math.floor((it.world.currentTime - it.codon.startTime) / 1000) %>s",
+  "output": {
+    "format": "text",
+    "file": "./sentinel-notes/warnings.md",
+    "lastValueFile": "./sentinel-notes/latest-warning.md"
+  }
+}

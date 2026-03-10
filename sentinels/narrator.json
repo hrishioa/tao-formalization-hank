@@ -1,0 +1,21 @@
+{
+  "id": "narrator",
+  "name": "Proof Progress Narrator",
+  "description": "Writes human-readable progress updates as the agent fills proof obligations",
+  "trigger": {
+    "type": "event",
+    "on": ["assistant.action", "tool.result"]
+  },
+  "execution": {
+    "strategy": "debounce",
+    "milliseconds": 8000
+  },
+  "model": "anthropic/claude-haiku-4-5-20251001",
+  "systemPromptText": "You observe an AI agent formalizing a math proof in Lean 4. It fills sorry placeholders with proofs, running lake build after each. Write 2-3 line progress updates: which lemma is being worked on, whether lake build passed, overall progress (e.g. 2/4 sorries filled). Output nothing if no meaningful progress.",
+  "userPromptText": "Recent events:\n<%= JSON.stringify(it.events.slice(-10), null, 2) %>\n\nCodon: <%= it.codon.name %>\nRunning for: <%= Math.floor((it.world.currentTime - it.codon.startTime) / 1000) %>s",
+  "output": {
+    "format": "text",
+    "file": "./sentinel-notes/progress.md",
+    "lastValueFile": "./sentinel-notes/latest-progress.md"
+  }
+}

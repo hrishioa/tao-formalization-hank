@@ -1,0 +1,139 @@
+{
+  "$schema": "https://unpkg.com/hankweave@latest/schemas/hank.schema.json",
+  "meta": {
+    "name": "Lean Proof Formalization",
+    "version": "0.1.0",
+    "description": "Formalizes informal equational theory proofs into Lean 4, following Terence Tao's skeleton-then-fill process.",
+    "author": "Southbridge AI"
+  },
+  "requirements": {
+    "env": ["ANTHROPIC_API_KEY"]
+  },
+  "globalSystemPromptFile": "./prompts/system.md",
+  "hank": [
+    {
+      "id": "analyze",
+      "name": "Step 1: Analyze & Plan",
+      "description": "Read the informal proof, create a formalization plan, write equation definitions",
+      "model": "sonnet",
+      "continuationMode": "fresh",
+      "promptFile": "./codons/codon-1-analyze/prompt.md",
+      "rigSetup": [
+        {
+          "type": "command",
+          "command": {
+            "run": "which lake || (echo 'ERROR: lake not found. Install elan first: curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh' && exit 1)"
+          }
+        },
+        {
+          "type": "copy",
+          "copy": {
+            "from": "./templates/lean-project",
+            "to": "lean-project"
+          }
+        },
+        {
+          "type": "command",
+          "command": {
+            "run": "mkdir -p workspace && cp read_only_data_source/*.md workspace/ && cp read_only_data_source/*.md .",
+            "workingDirectory": "project"
+          }
+        },
+        {
+          "type": "command",
+          "command": {
+            "run": "cd lean-project && if [ -d \"$HOME/.hankweave-lean-cache/.lake\" ]; then echo 'Using cached .lake via symlink'; ln -s \"$HOME/.hankweave-lean-cache/.lake\" .lake; else echo 'No local cache found, downloading Mathlib...'; lake exe cache get 2>&1 | tail -5; echo 'Saving cache to ~/.hankweave-lean-cache for future runs'; mkdir -p \"$HOME/.hankweave-lean-cache\" && cp -r .lake \"$HOME/.hankweave-lean-cache/.lake\"; fi",
+            "workingDirectory": "project"
+          }
+        },
+        {
+          "type": "command",
+          "command": {
+            "run": "cd lean-project && lake build 2>&1 | tail -3",
+            "workingDirectory": "project"
+          }
+        }
+      ],
+      "checkpointedFiles": [
+        "workspace/**/*",
+        "lean-project/Formalization/**/*"
+      ],
+      "onFailure": "retry",
+      "retryConfig": {
+        "maxAttempts": 2,
+        "delayMs": 5000
+      }
+    },
+    {
+      "id": "skeleton",
+      "name": "Step 2: Create Skeleton",
+      "description": "Write lemma statements with sorry proofs, verify they compile",
+      "model": "sonnet",
+      "continuationMode": "fresh",
+      "promptFile": "./codons/codon-2-skeleton/prompt.md",
+      "checkpointedFiles": [
+        "lean-project/Formalization/**/*"
+      ],
+      "onFailure": "retry",
+      "retryConfig": {
+        "maxAttempts": 2,
+        "delayMs": 5000
+      }
+    },
+    {
+      "id": "fill",
+      "name": "Step 3: Fill Proofs",
+      "description": "Replace sorry placeholders with actual proofs, verifying compilation after each",
+      "model": "sonnet",
+      "continuationMode": "fresh",
+      "promptFile": "./codons/codon-3-fill/prompt.md",
+      "checkpointedFiles": [
+        "lean-project/Formalization/**/*",
+        "sentinel-notes/**/*"
+      ],
+      "sentinels": [
+        {
+          "sentinelConfig": "./sentinels/narrator.json",
+          "settings": {
+            "failCodonIfNotLoaded": false
+          }
+        },
+        {
+          "sentinelConfig": "./sentinels/stuck-detector.json",
+          "settings": {
+            "failCodonIfNotLoaded": false
+          }
+        }
+      ],
+      "exhaustWithPrompt": "Check sentinel-notes/latest-warning.md for any warnings from the stuck detector. If it flagged circular behavior or being stuck, consider its suggestions. Then check if there are any remaining `sorry` in lean-project/Formalization/Basic.lean. If so, try to fill them — try a DIFFERENT approach than before. Run `lake build` from lean-project/ to verify. If all sorries are filled and compilation succeeds, you are done.",
+      "maxExtensions": 3,
+      "onFailure": "ignore"
+    },
+    {
+      "id": "validate",
+      "name": "Step 4: Validate & Package",
+      "description": "Final compilation check, count sorries, write output files",
+      "model": "haiku",
+      "continuationMode": "fresh",
+      "promptFile": "./codons/codon-4-validate/prompt.md",
+      "checkpointedFiles": [
+        "output/**/*"
+      ],
+      "outputFiles": [
+        {
+          "copy": ["output/proof.lean", "output/result.md", "output/drop_me_into_your_agent.md"]
+        }
+      ],
+      "rigSetup": [
+        {
+          "type": "command",
+          "command": {
+            "run": "rm -f lean-project/.lake && rm -f lean-project/lake-manifest.json && echo 'Cleaned .lake symlink'",
+            "workingDirectory": "project"
+          },
+          "allowFailure": true
+        }
+      ]
+    }
+  ]
+}
